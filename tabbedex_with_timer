@@ -149,12 +149,12 @@ sub refresh {
    }
 
    for my $tab (@{ $self->{tabs} }) {
-      if ($tab->{is_showing_clock}) {
-       my $maybe_name = strftime "%H:%M:%S", localtime;
-       if (not $tab->{name} eq $maybe_name) {
-         $tab->{name} = $maybe_name;
-       }
-     }
+      if ($tab->{is_showing_clock}==1) {
+        my $maybe_name = strftime "%H:%M:%S", localtime;
+        if (not $tab->{name} eq $maybe_name) {
+          $tab->{name} = $maybe_name;
+        }
+      }
       my $name = $tab->{name} ? $tab->{name} : $idx;
       my $act = $self->tab_activity_mark($tab);
       my $txt = sprintf "%s%s%s", $act, $name, $act;
@@ -532,21 +532,24 @@ sub tab_key_press {
         $tab->{is_inputting_name} = 0;
         $self->update_autohide(1);
       }
-      if ($keysym == 0xff0d || $keysym == 0xff8d) { # enter
-         $tab->{name} = $tab->{new_name};
-         $tab->{is_inputting_name} = 0;
-         $self->update_autohide (1);
-      } elsif ($keysym == 0xff1b) { # escape
-         $tab->{name} = $tab->{old_name};
-         $tab->{is_inputting_name} = 0;
-         $self->update_autohide (1);
-      } elsif ($keysym == 0xff08) { # backspace
-         substr $tab->{new_name}, -1, 1, "";
-         $tab->{name} = "$tab->{new_name}█";
-      } elsif ($str !~ /[\x00-\x1f\x80-\xaf]/) {
-         $tab->{new_name} .= $str;
-         $tab->{name} = "$tab->{new_name}█";
-      }
+	  else{
+		$tab->{is_showing_clock} = 0;
+		if ($keysym == 0xff0d || $keysym == 0xff8d) { # enter
+			$tab->{name} = $tab->{new_name};
+			$tab->{is_inputting_name} = 0;
+			$self->update_autohide (1);
+		} elsif ($keysym == 0xff1b) { # escape
+			$tab->{name} = $tab->{old_name};
+			$tab->{is_inputting_name} = 0;
+			$self->update_autohide (1);
+		} elsif ($keysym == 0xff08) { # backspace
+			substr $tab->{new_name}, -1, 1, "";
+			$tab->{name} = "$tab->{new_name}█";
+		} elsif ($str !~ /[\x00-\x1f\x80-\xaf]/) {
+			$tab->{new_name} .= $str;
+			$tab->{name} = "$tab->{new_name}█";
+		}
+	}
       $self->refresh;
       return 1;
    }
@@ -556,6 +559,7 @@ sub tab_key_press {
    if ($event->{state} & urxvt::ShiftMask) {
       if ($keysym == 0xff51 || $keysym == 0xff53) {
          if (@{ $self->{tabs} } > 1) {
+            $tab->{is_showing_clock} = 0;
             $self->change_tab($tab, $keysym - 0xff52);
          }
          return 1;
@@ -565,6 +569,7 @@ sub tab_key_press {
          return 1;
 
       } elsif ($keysym == 0xff52) {
+		$tab->{is_showing_clock} = 0;
          $self->rename_tab($tab);
          return 1;
       }
@@ -662,6 +667,7 @@ sub move_tab {
 sub rename_tab {
   my ($self, $tab) = @_;
 
+  $tab->{is_showing_clock} = 0;
   $tab->{is_inputting_name} = 1;
   $tab->{old_name} = $tab->{name} ? $tab->{name} : "";
   $tab->{new_name} = "";
