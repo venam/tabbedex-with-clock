@@ -149,7 +149,7 @@ sub refresh {
    }
 
    for my $tab (@{ $self->{tabs} }) {
-      if ($tab->{is_showing_clock}==1) {
+      if ($tab->{name}=~/\d+:\d+:\d+/) {
         my $maybe_name = strftime "%H:%M:%S", localtime;
         if (not $tab->{name} eq $maybe_name) {
           $tab->{name} = $maybe_name;
@@ -298,6 +298,7 @@ sub make_current {
       $cur->focus_out;
    }
 
+
    $self->{cur} = $tab;
 
    $self->configure;
@@ -317,12 +318,14 @@ sub make_current {
 sub on_focus_in {
    my ($self, $event) = @_;
    $self->{cur}->focus_in;
+
    ();
 }
 
 sub on_focus_out {
    my ($self, $event) = @_;
    $self->{cur}->focus_out;
+   $self->{cur}->refresh;
    ();
 }
 
@@ -527,13 +530,11 @@ sub tab_key_press {
 
    if ($tab->{is_inputting_name}) {
       if ($event->{state} & urxvt::ControlMask) {
-        $tab->{is_showing_clock} = 1;
         $tab->{name} = strftime "%H:%M:%S", localtime;
         $tab->{is_inputting_name} = 0;
         $self->update_autohide(1);
       }
 	  else{
-		$tab->{is_showing_clock} = 0;
 		if ($keysym == 0xff0d || $keysym == 0xff8d) { # enter
 			$tab->{name} = $tab->{new_name};
 			$tab->{is_inputting_name} = 0;
@@ -559,7 +560,6 @@ sub tab_key_press {
    if ($event->{state} & urxvt::ShiftMask) {
       if ($keysym == 0xff51 || $keysym == 0xff53) {
          if (@{ $self->{tabs} } > 1) {
-            $tab->{is_showing_clock} = 0;
             $self->change_tab($tab, $keysym - 0xff52);
          }
          return 1;
@@ -569,7 +569,6 @@ sub tab_key_press {
          return 1;
 
       } elsif ($keysym == 0xff52) {
-		$tab->{is_showing_clock} = 0;
          $self->rename_tab($tab);
          return 1;
       }
@@ -667,7 +666,6 @@ sub move_tab {
 sub rename_tab {
   my ($self, $tab) = @_;
 
-  $tab->{is_showing_clock} = 0;
   $tab->{is_inputting_name} = 1;
   $tab->{old_name} = $tab->{name} ? $tab->{name} : "";
   $tab->{new_name} = "";
